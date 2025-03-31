@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turnier Anzeige</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
+        
+        body {
+            background-color: black;
+            color: #a020f0;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+        }
+        table {
+            width: 80%;
+            margin: auto;
+            border-collapse: collapse;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0px 0px 15px #a020f0;
+        }
+        th, td {
+            border: 1px solid #a020f0;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        th {
+            background-color: #222;
+            font-size: 20px;
+        }
+        td {
+            background-color: #111;
+            font-size: 18px;
+            transition: all 0.3s ease-in-out;
+        }
+        tr.highlight td {
+            background-color: #a020f0;
+            color: black;
+            transform: scale(1.15);
+            transition: transform 0.5s ease-in-out;
+        }
+        tr.dimmed td {
+            opacity: 0.3;
+            transition: opacity 0.5s ease-in-out;
+        }
+        tr.hidden {
+            transform: translateY(100px);
+            opacity: 0;
+            transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        }
+        tr.eliminated td {
+            opacity: 0.5;
+            text-decoration: line-through;
+        }
+        h1 {
+            font-size: 36px;
+            text-shadow: 0 0 10px #a020f0;
+            animation: flicker 1.5s infinite alternate;
+        }
+        .team-info {
+            display: none;
+            position: relative;
+            width: 60%;
+            margin: 10px auto;
+            padding: 15px;
+            background: #222;
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px #a020f0;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        .team-info.show {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+        }
+        .eliminated-info {
+            color: #FF6347;
+            font-weight: bold;
+        }
+        .eliminated-table {
+            display: none;
+            margin-top: 20px;
+            background-color: #333;
+            color: #a020f0;
+        }
+        .qr-container {
+            margin-top: 50px;
+            text-align: center;
+        }
+        .qr-code {
+            margin-top: 20px;
+        }
+        @keyframes flicker {
+            0% { opacity: 1; }
+            100% { opacity: 0.8; }
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const teams = [
+                { name: "Team 1", players: ["Spieler 1", "Spieler 2"], points: 10, info: "Top Leistung!", angemeldet: true, eliminated: false },
+                { name: "Team 3", players: ["Spieler 5", "Spieler 6"], points: 12, info: "Defensiv sehr stark!", angemeldet: true, eliminated: false },
+                { name: "Team 5", players: ["Spieler 9", "Spieler 10"], points: 0, info: "Ausscheiden", angemeldet: false, eliminated: false },
+                { name: "Team 7", players: ["Spieler 13", "Spieler 14"], points: 14, info: "Taktisch sehr klug!", angemeldet: true, eliminated: false }
+            ];
+            
+            const tableBody = document.createElement("tbody");
+            const eliminatedTableBody = document.createElement("tbody");
+            let validTeams = [];
+            teams.forEach(team => {
+                const row = document.createElement("tr");
+                row.innerHTML = `<td>${team.name}</td><td>${team.players.join(", ")}</td><td>${team.points}</td>`;
+                if (team.eliminated) {
+                    row.classList.add("eliminated");
+                    eliminatedTableBody.appendChild(row);
+                } else {
+                    tableBody.appendChild(row);
+                }
+                validTeams.push({ row, info: team.info, eliminated: team.eliminated });
+            });
+            document.querySelector("table#active-teams").appendChild(tableBody);
+            document.querySelector("table#eliminated-teams").appendChild(eliminatedTableBody);
+            
+            const eliminatedTable = document.querySelector(".eliminated-table");
+            
+            let index = 0;
+            function highlightNextTeam() {
+                validTeams.forEach((t, i) => {
+                    t.row.classList.remove("highlight", "dimmed", "hidden");
+                    document.querySelectorAll(".team-info").forEach(info => info.remove());
+                });
+
+                if (index < validTeams.length) {
+                    setTimeout(() => {
+                        validTeams.forEach((t, i) => {
+                            if (i < index) {
+                                t.row.classList.add("dimmed");
+                            } else if (i > index) {
+                                t.row.classList.add("hidden");
+                            }
+                        });
+                        
+                        if (validTeams[index].eliminated) {
+                            validTeams[index].row.classList.add("eliminated");
+                            eliminatedTable.style.display = "block";  // Zeige die Tabelle mit ausgeschiedenen Teams
+                        } else {
+                            validTeams[index].row.classList.add("highlight");
+                        }
+                        
+                        const infoBox = document.createElement("div");
+                        infoBox.className = "team-info show";
+                        
+                        if (validTeams[index].eliminated) {
+                            infoBox.innerText = "Ausscheiden";
+                        } else {
+                            infoBox.innerText = validTeams[index].info;
+                        }
+                        
+                        validTeams[index].row.insertAdjacentElement("afterend", infoBox);
+                        
+                        index++;
+                        setTimeout(highlightNextTeam, 5000);
+                    }, 5000); // 5 Sekunden Pause
+                } else {
+                    setTimeout(() => location.reload(), 5000);
+                }
+            }
+            setTimeout(highlightNextTeam, 5000);
+        });
+    </script>
+</head>
+<body>
+    <h1>Turnier Anzeige</h1>
+    <table id="active-teams">
+        <tr>
+            <th>Team</th>
+            <th>Spieler</th>
+            <th>Punkte</th>
+        </tr>
+    </table>
+    
+    <div class="eliminated-table">
+        <h2>Ausgeschiedene Teams</h2>
+        <table id="eliminated-teams">
+            <tr>
+                <th>Team</th>
+                <th>Spieler</th>
+                <th>Punkte</th>
+            </tr>
+        </table>
+    </div>
+
+    <!-- QR Code Section -->
+    <div class="qr-container">
+        <p>You want this on your Phone? Scan here:</p>
+        <div class="qr-code">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?data=https://metz-io.github.io/Liveticker&size=200x200" alt="QR Code to Liveticker">
+        </div>
+    </div>
+</body>
+</html>
